@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_dc52fdd6129646b06d204e6d214d3d8d {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.css"/>
+</head>
+<body>
+    
+    
+    <div style="position: fixed; 
+                bottom: 50px; 
+                left: 50px; 
+                background-color: white; 
+                padding: 10px; 
+                border: 2px solid grey; 
+                border-radius: 5px; 
+                z-index: 9999;
+                font-size: 14px;
+                font-family: Arial;">
+        <h4 style="margin-top: 0;">AQI Legend</h4>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: green; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Good (0-50)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: lightgreen; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Satisfactory (51-100)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: yellow; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Moderate (101-200)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: orange; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Poor (201-300)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: red; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Very Poor (301-400)</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 2px 0;">
+            <div style="width: 20px; height: 20px; background-color: darkred; margin-right: 5px; border: 1px solid black;"></div>
+            <span>Severe (401-500)</span>
+        </div>
+    </div>
+    
+    
+    <script>
+    // Store AQI data
+    const baseAQI = 315.372802734375;
+    const baseStatus = "Very Poor";
+    const baseColor = "red";
+    
+    // Simulate AQI variation based on location
+    function getAQIForLocation(lat, lng) {
+        // In a real application, this would call your backend API
+        // For demo, we'll add some random variation
+        const variation = (Math.random() - 0.5) * 100;
+        const localAQI = Math.max(0, Math.min(500, baseAQI + variation));
+        
+        // Determine status and color
+        let status, color;
+        if (localAQI <= 50) {
+            status = "Good";
+            color = "green";
+        } else if (localAQI <= 100) {
+            status = "Satisfactory";
+            color = "lightgreen";
+        } else if (localAQI <= 200) {
+            status = "Moderate";
+            color = "yellow";
+        } else if (localAQI <= 300) {
+            status = "Poor";
+            color = "orange";
+        } else if (localAQI <= 400) {
+            status = "Very Poor";
+            color = "red";
+        } else {
+            status = "Severe";
+            color = "darkred";
+        }
+        
+        return {
+            aqi: Math.round(localAQI),
+            status: status,
+            color: color
+        };
+    }
+    
+    // Add click event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // This will be called when the map is ready
+        setTimeout(function() {
+            const map = document.getElementById('map');
+            if (map) {
+                map.addEventListener('click', function(e) {
+                    // Get clicked coordinates (simplified)
+                    const rect = map.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    // In a real implementation, you would convert screen coordinates to lat/lng
+                    // For demo, we'll use a simulated response
+                    const info = getAQIForLocation(0, 0);
+                    
+                    // Show popup (this is simplified - in real implementation use Leaflet popup)
+                    alert(`Location AQI: ${info.aqi}\nStatus: ${info.status}`);
+                });
+            }
+        }, 1000);
+    });
+    </script>
+    
+    
+            <div class="folium-map" id="map_dc52fdd6129646b06d204e6d214d3d8d" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_dc52fdd6129646b06d204e6d214d3d8d = L.map(
+                "map_dc52fdd6129646b06d204e6d214d3d8d",
+                {
+                    center: [13.036764, 77.619985],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_95ded8132438e259c48cef8499979230 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_95ded8132438e259c48cef8499979230.addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+        
+    
+            var marker_8a4561f9dd3e39a7d5a988b6e718e6be = L.marker(
+                [13.036764, 77.619985],
+                {
+}
+            ).addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+        
+    
+            var icon_d0b47ae8f23a89ff129ab5eb80c46691 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "green",
+  "iconColor": "white",
+  "icon": "play",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_320f266d6bfc54577a2fac30d3f90d27 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_dda8cdf87d1dcb4267a1db3681e84efe = $(`<div id="html_dda8cdf87d1dcb4267a1db3681e84efe" style="width: 100.0%; height: 100.0%;"><b>Start</b><br>Coordinates: 13.0368, 77.6200</div>`)[0];
+                popup_320f266d6bfc54577a2fac30d3f90d27.setContent(html_dda8cdf87d1dcb4267a1db3681e84efe);
+            
+        
+
+        marker_8a4561f9dd3e39a7d5a988b6e718e6be.bindPopup(popup_320f266d6bfc54577a2fac30d3f90d27)
+        ;
+
+        
+    
+    
+            marker_8a4561f9dd3e39a7d5a988b6e718e6be.bindTooltip(
+                `<div>
+                     Start Point
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_8a4561f9dd3e39a7d5a988b6e718e6be.setIcon(icon_d0b47ae8f23a89ff129ab5eb80c46691);
+            
+    
+            var marker_218949eba34a4edb6ceb2f0163e08afd = L.marker(
+                [13.036764, 77.619985],
+                {
+}
+            ).addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+        
+    
+            var icon_bdfe86d78c7e270faf202e9d5427d98d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "stop",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a6a75b2d812d1299b6cdd196997997d5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_de46a2f92f29824b968ffe2985d6e761 = $(`<div id="html_de46a2f92f29824b968ffe2985d6e761" style="width: 100.0%; height: 100.0%;"><b>Destination</b><br>Coordinates: 13.0368, 77.6200</div>`)[0];
+                popup_a6a75b2d812d1299b6cdd196997997d5.setContent(html_de46a2f92f29824b968ffe2985d6e761);
+            
+        
+
+        marker_218949eba34a4edb6ceb2f0163e08afd.bindPopup(popup_a6a75b2d812d1299b6cdd196997997d5)
+        ;
+
+        
+    
+    
+            marker_218949eba34a4edb6ceb2f0163e08afd.bindTooltip(
+                `<div>
+                     Destination
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_218949eba34a4edb6ceb2f0163e08afd.setIcon(icon_bdfe86d78c7e270faf202e9d5427d98d);
+            
+    
+            var poly_line_0341bf89073dd79b2e6e67cb6e17f3c5 = L.polyline(
+                [[13.036724, 77.619679], [13.036724, 77.619679]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 6}
+            ).addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+        
+    
+        var popup_0efb4ffdf7e3fe0fd2552903c43713f1 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1f4e49875b124e029c95b5315b161698 = $(`<div id="html_1f4e49875b124e029c95b5315b161698" style="width: 100.0%; height: 100.0%;"><b>Optimized Route</b><br>Distance: 0.0 km<br>Current AQI: 315.372802734375 (Very Poor)</div>`)[0];
+                popup_0efb4ffdf7e3fe0fd2552903c43713f1.setContent(html_1f4e49875b124e029c95b5315b161698);
+            
+        
+
+        poly_line_0341bf89073dd79b2e6e67cb6e17f3c5.bindPopup(popup_0efb4ffdf7e3fe0fd2552903c43713f1)
+        ;
+
+        
+    
+    
+            poly_line_0341bf89073dd79b2e6e67cb6e17f3c5.bindTooltip(
+                `<div>
+                     Click for route details
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var layer_control_0a1d69649d1f7bddefe9845f8e936de1_layers = {
+                base_layers : {
+                    "openstreetmap" : tile_layer_95ded8132438e259c48cef8499979230,
+                },
+                overlays :  {
+                },
+            };
+            let layer_control_0a1d69649d1f7bddefe9845f8e936de1 = L.control.layers(
+                layer_control_0a1d69649d1f7bddefe9845f8e936de1_layers.base_layers,
+                layer_control_0a1d69649d1f7bddefe9845f8e936de1_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": true,
+  "autoZIndex": true,
+}
+            ).addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+
+        
+    
+            L.control.fullscreen(
+                {
+  "position": "topleft",
+  "title": "Full Screen",
+  "titleCancel": "Exit Full Screen",
+  "forceSeparateButton": false,
+}
+            ).addTo(map_dc52fdd6129646b06d204e6d214d3d8d);
+        
+</script>
+</html>
